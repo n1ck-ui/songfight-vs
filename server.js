@@ -9,9 +9,18 @@ const fs = require('fs');
 const { exec } = require('child_process');
 
 const app = express();
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*' }
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  },
+  transports: ['polling', 'websocket'],
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  allowEIO3: true
 });
 
 const PORT = process.env.PORT || 3000;
@@ -285,14 +294,8 @@ async function fetchSpotifyPlaylistTracks(playlistUrl) {
   }
 }
 
-// Pre-resolve initial batch of songs (both Chorus preview and real 0:00 intro)
-(async () => {
-  for (let i = 0; i < Math.min(20, topSongs.length); i++) {
-    await resolveSong(topSongs[i]);
-    resolveIntroAudio(topSongs[i]).catch(() => {});
-  }
-  console.log('Pre-cached initial batch of song previews & 0:00 intros');
-})();
+// Top songs are already pre-enriched with Spotify CDN preview URLs and artwork in top1000.json
+console.log(`Ready with ${topSongs.length} songs for gameplay.`);
 
 // Active rooms map: roomCode -> room object
 const rooms = new Map();

@@ -5,7 +5,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Lucide icons
   lucide.createIcons();
 
-  const socket = io();
+  const socket = io({
+    transports: ['polling', 'websocket'],
+    reconnection: true,
+    reconnectionAttempts: 15,
+    reconnectionDelay: 1000,
+    timeout: 10000
+  });
+
+  socket.on('connect', () => {
+    console.log('[SongFight] Connected to server, socket ID:', socket.id);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.warn('[SongFight] Disconnected from server:', reason);
+  });
+
+  socket.on('connect_error', (err) => {
+    console.warn('[SongFight] Socket connection error:', err.message);
+  });
 
   // App State
   const state = {
@@ -389,10 +407,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (!socket.connected) {
+      showToast('Connecting to game server... Please try again in a few seconds.', 'error');
+      socket.connect();
+      return;
+    }
+
     const playlistUrl = selectedPlaylistType === 'custom' ? createScreen.inputCustomUrl.value.trim() : '';
 
     createScreen.btnSubmit.disabled = true;
     createScreen.btnSubmit.innerHTML = '<span>Creating room...</span>';
+
+    let responded = false;
+    const timeoutId = setTimeout(() => {
+      if (!responded) {
+        responded = true;
+        createScreen.btnSubmit.disabled = false;
+        createScreen.btnSubmit.innerHTML = '<span>Generate Room & Show Code</span><i data-lucide="arrow-right"></i>';
+        lucide.createIcons();
+        showToast('Server response timed out. Please try again.', 'error');
+      }
+    }, 8000);
 
     socket.emit('create_room', {
       hostName,
@@ -401,12 +436,16 @@ document.addEventListener('DOMContentLoaded', () => {
       playlistUrl,
       playbackMode: selectedPlaybackMode
     }, (res) => {
+      if (responded) return;
+      responded = true;
+      clearTimeout(timeoutId);
+
       createScreen.btnSubmit.disabled = false;
       createScreen.btnSubmit.innerHTML = '<span>Generate Room & Show Code</span><i data-lucide="arrow-right"></i>';
       lucide.createIcons();
 
-      if (res.error) {
-        showToast(res.error, 'error');
+      if (!res || res.error) {
+        showToast(res?.error || 'Error creating room.', 'error');
         return;
       }
 
@@ -467,9 +506,44 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (!socket.connected) {
+      showToast('Connecting to game server... Please try again in a few seconds.', 'error');
+      socket.connect();
+      return;
+    }
+
+    const submitBtn = joinScreen.form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Joining...</span>';
+    }
+
+    let responded = false;
+    const timeoutId = setTimeout(() => {
+      if (!responded) {
+        responded = true;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>Enter Room</span><i data-lucide="arrow-right"></i>';
+          lucide.createIcons();
+        }
+        showToast('Joining room timed out. Please check the code and try again.', 'error');
+      }
+    }, 8000);
+
     socket.emit('join_room', { code, playerName }, (res) => {
-      if (res.error) {
-        showToast(res.error, 'error');
+      if (responded) return;
+      responded = true;
+      clearTimeout(timeoutId);
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Enter Room</span><i data-lucide="arrow-right"></i>';
+        lucide.createIcons();
+      }
+
+      if (!res || res.error) {
+        showToast(res?.error || 'Failed to join room.', 'error');
         return;
       }
 
