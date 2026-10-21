@@ -1,0 +1,6 @@
+node_modules
+.git
+.DS_Store
+public/cache/*.mp3
+scripts/enrich_spotify_previews.js
+scripts/resolve_remaining_spotify.js

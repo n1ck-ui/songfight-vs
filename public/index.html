@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SongFight - The Ultimate Music Battle</title>
+  <meta name="description" content="SongFight: Guess top hits in record time with up to 10 players in real-time!" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+  <!-- Background Glow & Particle Canvas -->
+  <div class="bg-glow-orb bg-glow-1"></div>
+  <div class="bg-glow-orb bg-glow-2"></div>
+  <div class="bg-grid-overlay"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-left" id="logo-btn">
+      <div class="brand-logo">
+        <i data-lucide="disc-3" class="logo-icon spin-slow"></i>
+        <span class="brand-text">Song<span class="gradient-text">Fight</span></span>
+      </div>
+    </div>
+
+    <div class="header-center" id="header-room-pill" style="display: none;">
+      <div class="room-pill" id="room-code-badge" title="Click to copy">
+        <span class="pill-label">ROOM:</span>
+        <span class="pill-code" id="active-room-code">----</span>
+        <i data-lucide="copy" class="pill-icon"></i>
+      </div>
+    </div>
+
+    <div class="header-right">
+    </div>
+  </header>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Main Application Container -->
+  <main class="app-container">
+
+    <!-- ========================================== -->
+    <!-- SCREEN 1: START SCREEN (Join or Create) -->
+    <!-- ========================================== -->
+    <section id="screen-start" class="screen active">
+      <div class="hero-content">
+        <div class="hero-badge animate-fade-down">
+          <i data-lucide="flame" class="badge-icon"></i>
+          <span>MULTIPLAYER MUSIC BATTLE</span>
+        </div>
+        <h1 class="hero-title animate-fade-down">
+          Guess the Biggest Hits <br />
+          <span class="gradient-text">in Record Time!</span>
+        </h1>
+        <p class="hero-subtitle animate-fade-down delay-1">
+          Listen to songs, guess faster than your friends, and score up to 1,000 points per round!
+        </p>
+
+        <!-- Two Primary Cards: Join vs Create -->
+        <div class="start-cards-grid animate-fade-up delay-2">
+          <!-- Card Join -->
+          <div class="action-card card-join" id="card-action-join">
+            <div class="card-glow"></div>
+            <div class="card-icon-wrap">
+              <i data-lucide="log-in" class="card-icon"></i>
+            </div>
+            <h2 class="card-title">Join</h2>
+            <p class="card-desc">Enter a 4-letter room code to join an existing game.</p>
+            <div class="card-feature">
+              <i data-lucide="smartphone"></i>
+              <span>Mobile & Desktop optimized</span>
+            </div>
+            <button class="btn btn-secondary btn-block">
+              <span>Join Room</span>
+              <i data-lucide="arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Card Create -->
+          <div class="action-card card-create" id="card-action-create">
+            <div class="card-glow"></div>
+            <div class="host-tag">HOST MODE</div>
+            <div class="card-icon-wrap">
+              <i data-lucide="sparkles" class="card-icon"></i>
+            </div>
+            <h2 class="card-title">Create</h2>
+            <p class="card-desc">Create a room, get a QR code & invite up to 10 friends.</p>
+            <div class="card-feature">
+              <i data-lucide="qr-code"></i>
+              <span>Instant QR Code & Link</span>
+            </div>
+            <button class="btn btn-primary btn-block">
+              <span>Create Room</span>
+              <i data-lucide="plus-circle"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 2: JOIN SCREEN (Code & Name) -->
+    <!-- ========================================== -->
+    <section id="screen-join" class="screen">
+      <div class="card-panel panel-centered animate-scale-up">
+        <button class="btn-back" id="btn-back-from-join">
+          <i data-lucide="arrow-left"></i>
+          <span>Back</span>
+        </button>
+
+        <div class="panel-header">
+          <div class="panel-icon-wrap">
+            <i data-lucide="key-round"></i>
+          </div>
+          <h2 class="panel-title">Join Game</h2>
+          <p class="panel-subtitle">Enter the 4-letter room code and your name</p>
+        </div>
+
+        <form id="form-join-room" class="form-flow">
+          <!-- 4-Letter Room Code -->
+          <div class="input-group">
+            <label for="join-code" class="input-label">4-Letter Room Code</label>
+            <div class="code-input-wrapper">
+              <input type="text" id="join-code" class="input-code" placeholder="ABCD" maxlength="4" autocomplete="off"
+                autocapitalize="characters" spellcheck="false" required />
+            </div>
+            <span class="input-hint">Case-insensitive</span>
+          </div>
+
+          <!-- Player Name -->
+          <div class="input-group">
+            <label for="join-name" class="input-label">Your Player Name</label>
+            <div class="input-with-icon">
+              <i data-lucide="user" class="input-icon"></i>
+              <input type="text" id="join-name" class="input-text" placeholder="e.g. Alex, Luna, SoundMaster..."
+                maxlength="16" required />
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-submit-join">
+            <span>Enter / Join</span>
+            <i data-lucide="log-in"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 3: CREATE SCREEN (Setup & Playlist) -->
+    <!-- ========================================== -->
+    <section id="screen-create" class="screen">
+      <div class="card-panel panel-centered animate-scale-up">
+        <button class="btn-back" id="btn-back-from-create">
+          <i data-lucide="arrow-left"></i>
+          <span>Back</span>
+        </button>
+
+        <div class="panel-header">
+          <div class="panel-icon-wrap">
+            <i data-lucide="radio"></i>
+          </div>
+          <h2 class="panel-title">Create Room</h2>
+          <p class="panel-subtitle">Enter your name and choose your playlist</p>
+        </div>
+
+        <div class="create-steps-flow">
+          <!-- Step 1: Host Name -->
+          <div class="input-group">
+            <label for="create-host-name" class="input-label">Your Host Name</label>
+            <div class="input-with-icon">
+              <i data-lucide="crown" class="input-icon"></i>
+              <input type="text" id="create-host-name" class="input-text" placeholder="e.g. DJ Champion" maxlength="16"
+                required />
+            </div>
+          </div>
+
+          <!-- Step 2: Playlist Selection with Default & Custom Options -->
+          <div class="input-group">
+            <div class="playlist-header-row">
+              <label class="input-label">Select Playlist</label>
+              <!-- Info Icon (i) with popover explaining how to find link -->
+              <div class="info-tooltip-container">
+                <button type="button" class="btn-info-circle" id="btn-playlist-info"
+                  aria-label="How to find playlist link">
+                  <i data-lucide="info"></i>
+                </button>
+                <div class="info-popover-box" id="playlist-info-popover" style="display: none;">
+                  <div class="popover-header">
+                    <i data-lucide="help-circle"></i>
+                    <span>How to copy your Spotify playlist link:</span>
+                  </div>
+                  <ol class="popover-steps">
+                    <li>Open <strong>Spotify</strong> on your phone or computer.</li>
+                    <li>Go to your desired playlist.</li>
+                    <li>Click the <strong>three dots (...)</strong> next to the Play button.</li>
+                    <li>Select <strong>Share</strong> ➔ <strong>Copy link to playlist</strong>.</li>
+                    <li>Paste the link into the field below!</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <!-- Two Choice Cards: Default vs Custom -->
+            <div class="playlist-cards-grid">
+              <!-- Default Playlist -->
+              <div class="playlist-card active" id="card-playlist-default" data-playlist="default">
+                <div class="playlist-card-radio"></div>
+                <div class="playlist-card-content">
+                  <div class="playlist-card-title-row">
+                    <strong class="playlist-card-title">Top Hits</strong>
+                    <span class="playlist-default-badge">Default</span>
+                  </div>
+                  <p class="playlist-card-desc">Popular chart hits & all-time classics</p>
+                </div>
+                <i data-lucide="sparkles" class="playlist-card-icon"></i>
+              </div>
+
+              <!-- Custom Playlist -->
+              <div class="playlist-card" id="card-playlist-custom" data-playlist="custom">
+                <div class="playlist-card-radio"></div>
+                <div class="playlist-card-content">
+                  <strong class="playlist-card-title">Custom Playlist</strong>
+                  <p class="playlist-card-desc">Play using your own Spotify playlist link</p>
+                </div>
+                <i data-lucide="link" class="playlist-card-icon"></i>
+              </div>
+            </div>
+
+            <!-- Custom Playlist URL Input Box -->
+            <div class="custom-playlist-box" id="custom-playlist-input-container" style="display: none;">
+              <div class="input-with-icon">
+                <i data-lucide="music" class="input-icon"></i>
+                <input type="url" id="input-custom-playlist-url" class="input-text"
+                  placeholder="https://open.spotify.com/playlist/..." autocomplete="off" />
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-check-playlist">
+                  <span>Check</span>
+                </button>
+              </div>
+              <p class="custom-playlist-hint">
+                <i data-lucide="sparkles"></i>
+                <span>Play with your own playlist!</span>
+              </p>
+              <div class="playlist-status-msg" id="custom-playlist-status" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Step 3: Song Playback Mode (Chorus vs From Beginning) -->
+          <div class="input-group">
+            <label class="input-label">Song Playback Mode</label>
+            <div class="playback-cards-grid">
+              <!-- Option 1: Default (Chorus / Hook) -->
+              <div class="playback-card active" id="card-playback-popular" data-mode="popular">
+                <div class="playback-card-radio"></div>
+                <div class="playback-card-content">
+                  <div class="playback-card-title-row">
+                    <strong class="playback-card-title">Default</strong>
+                    <span class="playback-badge popular-glow">Regular Mode</span>
+                  </div>
+                  <p class="playback-card-desc">Plays a random 30 second chunk of the song</p>
+                </div>
+                <i data-lucide="flame" class="playback-card-icon"></i>
+              </div>
+
+              <!-- Option 2: From Beginning (Real 0:00 Intro) -->
+              <div class="playback-card" id="card-playback-beginning" data-mode="beginning">
+                <div class="playback-card-radio"></div>
+                <div class="playback-card-content">
+                  <div class="playback-card-title-row">
+                    <strong class="playback-card-title">From Beginning</strong>
+                    <span class="playback-badge">Intro</span>
+                  </div>
+                  <p class="playback-card-desc">Starts at the beginning of the song</p>
+                </div>
+                <i data-lucide="disc" class="playback-card-icon"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Number of Rounds -->
+          <div class="input-group">
+            <label class="input-label">Number of Rounds</label>
+            <div class="rounds-stepper-wrap">
+              <button type="button" class="stepper-btn" id="btn-rounds-minus">
+                <i data-lucide="minus"></i>
+              </button>
+              <div class="stepper-display">
+                <span id="create-rounds-count">5</span>
+                <span class="stepper-unit">Rounds</span>
+              </div>
+              <button type="button" class="stepper-btn" id="btn-rounds-plus">
+                <i data-lucide="plus"></i>
+              </button>
+            </div>
+            <div class="rounds-presets">
+              <button type="button" class="preset-btn" data-rounds="3">3</button>
+              <button type="button" class="preset-btn active" data-rounds="5">5</button>
+              <button type="button" class="preset-btn" data-rounds="10">10</button>
+              <button type="button" class="preset-btn" data-rounds="15">15</button>
+            </div>
+          </div>
+
+          <!-- Create Button -->
+          <button class="btn btn-primary btn-block btn-lg" id="btn-submit-create">
+            <span>Generate Room & Show Code</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 4: HOST LOBBY (QR Code + Code + Players) -->
+    <!-- ========================================== -->
+    <section id="screen-lobby-host" class="screen">
+      <div class="lobby-grid">
+        <!-- Left: QR Code & 4-letter Code -->
+        <div class="card-panel lobby-qr-panel animate-scale-up">
+          <div class="lobby-header-badge">
+            <span class="pulse-dot"></span>
+            <span>Waiting for players...</span>
+          </div>
+
+          <h2 class="qr-heading">Scan the QR code to join</h2>
+
+          <!-- QR Code Canvas / Img Container -->
+          <div class="qr-code-wrapper">
+            <div class="qr-frame">
+              <img id="host-qr-img" class="qr-image" alt="SongFight QR Code" src="" />
+            </div>
+            <div class="qr-scan-hint">
+              <i data-lucide="camera"></i>
+              <span>Scan with your phone camera</span>
+            </div>
+          </div>
+
+          <!-- 4-Letter Code Display underneath QR Code -->
+          <div class="room-code-display-box">
+            <span class="code-box-label">OR ENTER 4-LETTER CODE</span>
+            <div class="code-tiles" id="host-code-tiles">
+              <div class="code-tile">-</div>
+              <div class="code-tile">-</div>
+              <div class="code-tile">-</div>
+              <div class="code-tile">-</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-join-link">
+              <i data-lucide="link"></i>
+              <span>Copy Link</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Player List & Game Controls -->
+        <div class="card-panel lobby-players-panel animate-scale-up delay-1">
+          <div class="lobby-panel-header">
+            <div>
+              <h3 class="lobby-players-title">Joined Players</h3>
+              <p class="lobby-players-subtitle">Up to 10 players can join</p>
+            </div>
+            <div class="player-counter-badge">
+              <i data-lucide="users"></i>
+              <span id="host-player-count">1</span> / <span id="host-max-players">10</span>
+            </div>
+          </div>
+
+          <!-- Player Limit Progress Bar -->
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="host-player-progress" style="width: 10%;"></div>
+          </div>
+
+          <!-- Joined Players Grid -->
+          <div class="players-list-scroll" id="host-players-list">
+            <!-- Dynamic player chips -->
+          </div>
+
+          <!-- Host In-Lobby Settings (Adjust rounds & playback mode) -->
+          <div class="lobby-settings-row">
+            <span class="lobby-settings-label">
+              <i data-lucide="target"></i> Rounds:
+            </span>
+            <div class="rounds-stepper-compact">
+              <button class="stepper-btn-sm" id="btn-lobby-rounds-minus"><i data-lucide="minus"></i></button>
+              <span id="lobby-rounds-display" class="rounds-number-sm">5</span>
+              <button class="stepper-btn-sm" id="btn-lobby-rounds-plus"><i data-lucide="plus"></i></button>
+            </div>
+          </div>
+
+          <div class="lobby-settings-row">
+            <span class="lobby-settings-label">
+              <i data-lucide="play-circle"></i> Playback:
+            </span>
+            <div class="playback-toggle-compact" id="lobby-playback-toggle">
+              <button type="button" class="playback-pill-btn active" id="btn-lobby-mode-popular" data-mode="popular">
+                <i data-lucide="flame"></i>
+                <span>Default</span>
+              </button>
+              <button type="button" class="playback-pill-btn" id="btn-lobby-mode-beginning" data-mode="beginning">
+                <i data-lucide="disc"></i>
+                <span>From Beginning</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Start Game Action -->
+          <div class="lobby-action-footer">
+            <button class="btn btn-primary btn-block btn-xl glow-effect" id="btn-host-start-game">
+              <i data-lucide="play-circle"></i>
+              <span>Start Game</span>
+            </button>
+            <span class="lobby-start-note">All players will start synchronously</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 5: PLAYER LOBBY (Waiting for Host) -->
+    <!-- ========================================== -->
+    <section id="screen-lobby-player" class="screen">
+      <div class="card-panel panel-centered animate-scale-up">
+        <div class="waiting-graphic">
+          <div class="vinyl-spin-wrap">
+            <i data-lucide="disc-3" class="vinyl-icon-huge spin-medium"></i>
+          </div>
+        </div>
+
+        <h2 class="panel-title">You're in!</h2>
+        <div class="room-tag-big" id="player-room-tag">ROOM: ABCD</div>
+        <p class="panel-subtitle">Waiting for the host to start the game...</p>
+
+        <!-- Player Lobby Badges (Playlist & Mode) -->
+        <div class="player-lobby-meta-bar">
+          <span class="player-meta-badge" id="player-lobby-playlist-badge">
+            <i data-lucide="music"></i>
+            <span id="player-lobby-playlist-text">Top Hits</span>
+          </span>
+          <span class="player-meta-badge" id="player-lobby-mode-badge">
+            <i data-lucide="flame" id="player-lobby-mode-icon"></i>
+            <span id="player-lobby-mode-text">Default (Chorus)</span>
+          </span>
+        </div>
+
+        <!-- Player list -->
+        <div class="player-lobby-section">
+          <div class="section-header-compact">
+            <span>Players in Room</span>
+            <span id="player-lobby-counter">1 / 10</span>
+          </div>
+          <div class="players-list-scroll player-list-compact" id="player-lobby-list">
+            <!-- Dynamic player chips -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 6: ACTIVE GAME ARENA -->
+    <!-- ========================================== -->
+    <section id="screen-game" class="screen">
+      <div class="game-arena-layout">
+        <!-- Main Game Area (Left / Center) -->
+        <div class="game-main-content">
+          <!-- Top Round & Timer Bar (Potential points removed per user request) -->
+          <div class="game-top-bar">
+            <div class="round-indicator">
+              <span class="round-label">ROUND</span>
+              <span class="round-number" id="game-round-indicator">1 / 5</span>
+            </div>
+
+            <!-- 30-Second Countdown & Progress -->
+            <div class="game-timer-container">
+              <div class="timer-display-wrap">
+                <i data-lucide="timer" class="timer-icon"></i>
+                <span class="timer-seconds" id="game-timer-text">30s</span>
+              </div>
+              <div class="timer-progress-track">
+                <div class="timer-progress-bar" id="game-timer-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Central Audio & Visualizer Stage -->
+          <div class="audio-stage-card">
+            <div class="stage-background-glow" id="stage-glow"></div>
+
+            <div class="stage-centerpiece">
+              <!-- Animated Vinyl Disc -->
+              <div class="stage-vinyl-wrapper" id="stage-vinyl">
+                <div class="vinyl-record spin-vinyl-fast">
+                  <div class="vinyl-grooves"></div>
+                  <div class="vinyl-label">
+                    <i data-lucide="music-4" class="vinyl-center-icon"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Audio Visualizer Canvas -->
+              <canvas id="visualizer-canvas" class="visualizer-canvas" width="600" height="120"></canvas>
+            </div>
+
+            <div class="stage-status-banner">
+              <span class="wave-animation">
+                <span></span><span></span><span></span><span></span>
+              </span>
+              <span id="stage-status-text">Guess the song!</span>
+            </div>
+          </div>
+
+          <!-- Guess Input & Autocomplete Area -->
+          <div class="guess-input-container">
+            <form id="form-guess" class="guess-form" autocomplete="off">
+              <div class="autocomplete-wrapper">
+                <div class="guess-input-box">
+                  <i data-lucide="search" class="guess-search-icon"></i>
+                  <input type="text" id="input-guess" class="input-guess" placeholder="Type song title or artist..."
+                    autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                    aria-controls="autocomplete-list" />
+                  <button type="submit" class="btn btn-primary btn-guess" id="btn-submit-guess">
+                    <span>Guess</span>
+                    <i data-lucide="send"></i>
+                  </button>
+                </div>
+
+                <!-- Autocomplete Dropdown List -->
+                <div class="autocomplete-dropdown" id="autocomplete-list" role="listbox" style="display: none;">
+                  <!-- Dynamic search suggestions -->
+                </div>
+              </div>
+            </form>
+
+            <!-- Feedback Alert Banner -->
+            <div class="guess-feedback-card" id="guess-feedback-card" style="display: none;">
+              <div class="feedback-icon-box" id="feedback-icon-box">
+                <i data-lucide="check" id="feedback-icon"></i>
+              </div>
+              <div class="feedback-content">
+                <strong id="feedback-title">Correct!</strong>
+                <p id="feedback-desc">+940 points scored!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Persistent Scoreboard (ALWAYS VISIBLE) -->
+        <aside class="game-sidebar-scoreboard">
+          <div class="sidebar-header">
+            <div class="sidebar-title-wrap">
+              <i data-lucide="trophy" class="trophy-gold"></i>
+              <h3>Leaderboard</h3>
+            </div>
+          </div>
+
+          <div class="scoreboard-players-list" id="game-scoreboard-list">
+            <!-- Dynamic scoreboard player rows -->
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 7: ROUND REVEAL OVERLAY -->
+    <!-- ========================================== -->
+    <div id="overlay-round-reveal" class="reveal-overlay" style="display: none;">
+      <div class="reveal-card animate-bounce-in">
+        <div class="reveal-tag">ROUND RESULTS</div>
+
+        <div class="reveal-album-wrap">
+          <img id="reveal-album-img" src="" alt="Album Cover" class="reveal-album-art" />
+          <div class="album-shine"></div>
+        </div>
+
+        <div class="reveal-song-info">
+          <h2 class="reveal-song-title" id="reveal-song-title">Song Title</h2>
+          <h3 class="reveal-song-artist" id="reveal-song-artist">Artist</h3>
+          <span class="reveal-song-year" id="reveal-song-year">2020</span>
+        </div>
+
+        <!-- Fastest Player Spotlight -->
+        <div class="reveal-fastest-card" id="reveal-fastest-box">
+          <i data-lucide="zap" class="fastest-icon"></i>
+          <div class="fastest-info">
+            <span class="fastest-label">Fastest Guess:</span>
+            <strong id="reveal-fastest-name">Max (+980 pts in 1.2s)</strong>
+          </div>
+        </div>
+
+        <!-- Next Round Countdown -->
+        <div class="reveal-next-counter">
+          <span>Next round starts in</span>
+          <strong id="reveal-countdown-number">5</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 8: END SCREEN / PODIUM & TOP 3 -->
+    <!-- ========================================== -->
+    <section id="screen-gameover" class="screen">
+      <div class="podium-screen-content">
+        <div class="podium-header animate-fade-down">
+          <div class="champion-trophy-wrap">
+            <i data-lucide="trophy" class="champion-trophy spin-slow"></i>
+          </div>
+          <h1 class="podium-title">Game Over!</h1>
+          <p class="podium-subtitle">Here are the winners of SongFight:</p>
+        </div>
+
+        <!-- 3D Victory Podium Stage -->
+        <div class="podium-stage-container">
+          <!-- Place 2 (Left Pillar, Silver) -->
+          <div class="podium-column column-place-2" id="podium-col-2">
+            <div class="podium-player-card" id="podium-card-2">
+              <div class="podium-rank-badge rank-silver">#2</div>
+              <div class="podium-avatar" id="podium-avatar-2">🥈</div>
+              <div class="podium-player-name" id="podium-name-2">Player 2</div>
+              <div class="podium-score" id="podium-score-2">0 pts</div>
+            </div>
+            <div class="podium-pillar pillar-silver">
+              <span class="pillar-number">2</span>
+            </div>
+          </div>
+
+          <!-- Place 1 (Center Pillar, Gold Champion) -->
+          <div class="podium-column column-place-1" id="podium-col-1">
+            <div class="champion-crown" id="podium-crown">
+              <i data-lucide="crown"></i>
+            </div>
+            <div class="podium-player-card" id="podium-card-1">
+              <div class="podium-rank-badge rank-gold">#1</div>
+              <div class="podium-avatar gold-glow" id="podium-avatar-1">🥇</div>
+              <div class="podium-player-name winner-name" id="podium-name-1">Player 1</div>
+              <div class="podium-score gold-score" id="podium-score-1">0 pts</div>
+            </div>
+            <div class="podium-pillar pillar-gold">
+              <span class="pillar-number">1</span>
+              <span class="pillar-winner-tag">CHAMPION</span>
+            </div>
+          </div>
+
+          <!-- Place 3 (Right Pillar, Bronze) -->
+          <div class="podium-column column-place-3" id="podium-col-3">
+            <div class="podium-player-card" id="podium-card-3">
+              <div class="podium-rank-badge rank-bronze">#3</div>
+              <div class="podium-avatar" id="podium-avatar-3">🥉</div>
+              <div class="podium-player-name" id="podium-name-3">Player 3</div>
+              <div class="podium-score" id="podium-score-3">0 pts</div>
+            </div>
+            <div class="podium-pillar pillar-bronze">
+              <span class="pillar-number">3</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Remaining Players Leaderboard (Places 4-10) -->
+        <div class="other-players-box" id="other-players-box" style="display: none;">
+          <h4 class="other-players-heading">Other Placements</h4>
+          <div class="other-players-list" id="other-players-list"></div>
+        </div>
+
+        <!-- End Screen Actions: Replay vs Quit -->
+        <div class="podium-actions-footer animate-fade-up delay-2">
+          <button class="btn btn-primary btn-lg glow-effect" id="btn-gameover-replay">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Play Again</span>
+          </button>
+          <button class="btn btn-secondary btn-lg" id="btn-gameover-quit">
+            <i data-lucide="log-out"></i>
+            <span>Leave</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Audio Manager & Application Logic -->
+  <script src="/js/audio.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+
+</html>
