@@ -68,15 +68,15 @@ function cleanMatchStr(str) {
 }
 
 async function resolveSong(song) {
-  // If song already has official Spotify preview (or Deezer preview), return it directly
-  if (song.previewUrl && !song.previewUrl.includes('itunes.apple.com')) {
+  // If song already has official preview AND genuine artwork, return directly
+  if (song.previewUrl && !song.previewUrl.includes('itunes.apple.com') && song.artwork && !song.artwork.includes('ab67706c00006c11bcab826d041d62c6af22c2ec')) {
     return song;
   }
   if (songCache.has(song.id)) {
     return songCache.get(song.id);
   }
 
-  // 0. If song has a Spotify track URI, fetch official Spotify embed preview
+  // 0. If song has a Spotify track URI, fetch official Spotify embed preview & artwork
   const trackIdMatch = (song.spotifyUri || song.id || '').toString().match(/track[:\/]([a-zA-Z0-9]+)/);
   if (trackIdMatch) {
     try {
@@ -91,11 +91,13 @@ async function resolveSong(song) {
           const d = JSON.parse(m[1]);
           const ent = d.props?.pageProps?.state?.data?.entity;
           if (ent?.audioPreview?.url) {
+            const rawArt = ent.visualIdentity?.image?.[0]?.url;
+            const validArt = (rawArt && !rawArt.includes('ab67706c00006c11bcab826d041d62c6af22c2ec')) ? rawArt : song.artwork;
             const resolved = {
               ...song,
               previewUrl: ent.audioPreview.url,
               spotifyPreviewUrl: ent.audioPreview.url,
-              artwork: ent.visualIdentity?.image?.[0]?.url || song.artwork,
+              artwork: validArt,
               duration: 30
             };
             songCache.set(song.id, resolved);
