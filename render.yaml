@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: songfight-vs
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 3000
