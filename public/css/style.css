@@ -51,11 +51,21 @@
   padding: 0;
 }
 
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--bg-main);
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
   position: relative;
   display: flex;
@@ -70,6 +80,8 @@ body {
   filter: blur(120px);
   pointer-events: none;
   z-index: 0;
+  max-width: 100vw;
+  overflow: hidden;
 }
 
 .bg-glow-1 {
@@ -255,17 +267,23 @@ h1, h2, h3, h4, .brand-text {
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .screen {
   display: none;
   flex: 1;
   width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .screen.active {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Buttons */
@@ -1539,16 +1557,22 @@ h1, h2, h3, h4, .brand-text {
    ========================================================= */
 .game-arena-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 28px;
   width: 100%;
+  max-width: 100%;
   height: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .game-main-content {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .game-top-bar {
@@ -1785,9 +1809,12 @@ h1, h2, h3, h4, .brand-text {
   border: 2px solid rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
-  padding: 6px 8px 6px 20px;
+  padding: 6px 8px 6px 16px;
   box-shadow: var(--shadow-card);
   transition: all 0.2s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .guess-input-box:focus-within {
@@ -1797,25 +1824,29 @@ h1, h2, h3, h4, .brand-text {
 
 .guess-search-icon {
   color: var(--text-muted);
-  width: 22px;
-  height: 22px;
-  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .input-guess {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   background: transparent;
   border: none;
   outline: none;
   font-family: var(--font-body);
-  font-size: 17px;
+  font-size: 16px;
   color: #fff;
   padding: 10px 0;
 }
 
 .btn-guess {
-  padding: 12px 24px;
+  padding: 12px 20px;
   border-radius: var(--radius-md);
+  flex-shrink: 0;
 }
 
 /* Autocomplete Dropdown */
@@ -2635,10 +2666,152 @@ h1, h2, h3, h4, .brand-text {
   .hero-title { font-size: 38px; }
   .start-cards-grid { grid-template-columns: 1fr; }
   .lobby-grid { grid-template-columns: 1fr; }
-  .game-arena-layout { grid-template-columns: 1fr; }
-  .game-sidebar-scoreboard { order: 2; }
-  .game-main-content { order: 1; }
-  .app-header { padding: 12px 16px; }
-  .app-container { padding: 16px; }
+  .game-arena-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  .game-sidebar-scoreboard {
+    order: 2;
+    width: 100%;
+    max-width: 100%;
+  }
+  .game-main-content {
+    order: 1;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .app-header {
+    padding: 12px 16px;
+    width: 100%;
+  }
+  .app-container {
+    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
   .podium-stage-container { height: 320px; }
+}
+
+@media (max-width: 600px) {
+  .app-header {
+    padding: 10px 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .brand-logo {
+    font-size: 20px;
+    gap: 8px;
+  }
+  .logo-icon {
+    width: 22px;
+    height: 22px;
+  }
+  .app-container {
+    padding: 12px 14px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+  .card-panel {
+    padding: 24px 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .game-arena-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  .game-main-content {
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .game-top-bar {
+    padding: 12px 14px;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .round-number {
+    font-size: 20px;
+  }
+  .timer-seconds {
+    font-size: 15px;
+  }
+  .audio-stage-card {
+    padding: 24px 14px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .stage-centerpiece {
+    width: 100%;
+    max-width: 100%;
+    gap: 16px;
+  }
+  .vinyl-record {
+    width: 120px;
+    height: 120px;
+  }
+  .vinyl-label {
+    width: 44px;
+    height: 44px;
+  }
+  .visualizer-canvas {
+    width: 100%;
+    max-width: 100%;
+    height: 70px;
+  }
+  .guess-input-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .guess-input-box {
+    padding: 6px 6px 6px 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .guess-search-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .input-guess {
+    font-size: 16px;
+    min-width: 0;
+  }
+  .btn-guess {
+    padding: 10px 14px;
+    font-size: 14px;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .game-sidebar-scoreboard {
+    padding: 16px 14px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .scoreboard-row {
+    padding: 10px 12px;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
 }
