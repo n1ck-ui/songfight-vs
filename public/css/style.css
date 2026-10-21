@@ -820,6 +820,8 @@ h1, h2, h3, h4, .brand-text {
   gap: 12px;
   cursor: pointer;
   transition: all 0.25s ease;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .playlist-card:hover {
@@ -973,6 +975,8 @@ h1, h2, h3, h4, .brand-text {
   gap: 12px;
   cursor: pointer;
   transition: all 0.25s ease;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .playback-card:hover {
@@ -2813,5 +2817,45 @@ h1, h2, h3, h4, .brand-text {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+  }
+  /* Mobile Playback & Playlist Choice Cards (Stack vertically so From Beginning fits perfectly) */
+  .playlist-cards-grid,
+  .playback-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .playlist-card,
+  .playback-card {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+  }
+  /* Host Lobby Settings Row: Stack label and toggle so both pill buttons fit without overflow */
+  .lobby-settings-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .lobby-settings-row .playback-toggle-compact {
+    width: 100%;
+    display: flex;
+    justify-content: stretch;
+    box-sizing: border-box;
+  }
+  .lobby-settings-row .playback-pill-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .rounds-stepper-compact {
+    justify-content: space-between;
+    width: 100%;
   }
 }
