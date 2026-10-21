@@ -485,9 +485,10 @@ io.on('connection', (socket) => {
 
   // Create room
   socket.on('create_room', async ({ hostName, rounds = 5, playlistType = 'default', playlistUrl, playbackMode = 'popular' }, callback) => {
+    const cb = typeof callback === 'function' ? callback : () => {};
     try {
       if (!hostName || !hostName.trim()) {
-        return callback({ error: 'Please enter your name.' });
+        return cb({ error: 'Please enter your name.' });
       }
 
       let roomSongs = topSongs;
@@ -560,7 +561,7 @@ io.on('connection', (socket) => {
 
       console.log(`Room created: ${roomCode} by ${hostPlayer.name} with ${room.totalRounds} rounds [${playlistName}]`);
 
-      callback({
+      cb({
         success: true,
         roomCode,
         joinUrl,
@@ -571,30 +572,31 @@ io.on('connection', (socket) => {
       });
     } catch (err) {
       console.error('Error creating room:', err);
-      callback({ error: 'Error creating room.' });
+      cb({ error: 'Error creating room.' });
     }
   });
 
   // Join room
   socket.on('join_room', ({ code, playerName }, callback) => {
+    const cb = typeof callback === 'function' ? callback : () => {};
     try {
       if (!code || !playerName || !playerName.trim()) {
-        return callback({ error: 'Room code and player name are required.' });
+        return cb({ error: 'Room code and player name are required.' });
       }
 
       const roomCode = code.toUpperCase().trim();
       const room = rooms.get(roomCode);
 
       if (!room) {
-        return callback({ error: `Room "${roomCode}" does not exist.` });
+        return cb({ error: `Room "${roomCode}" does not exist.` });
       }
 
       if (room.players.length >= room.maxPlayers) {
-        return callback({ error: 'This room is full (max 10 players).' });
+        return cb({ error: 'This room is full (max 10 players).' });
       }
 
       if (room.state !== 'LOBBY') {
-        return callback({ error: 'The game has already started.' });
+        return cb({ error: 'The game has already started.' });
       }
 
       // Check duplicate name
@@ -622,7 +624,7 @@ io.on('connection', (socket) => {
       // Notify all players in room
       io.to(roomCode).emit('room_update', serializeRoom(room));
 
-      callback({
+      cb({
         success: true,
         roomCode,
         player: newPlayer,
@@ -630,7 +632,7 @@ io.on('connection', (socket) => {
       });
     } catch (err) {
       console.error('Error joining room:', err);
-      callback({ error: 'Error joining room.' });
+      cb({ error: 'Error joining room.' });
     }
   });
 
