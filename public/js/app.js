@@ -415,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const playlistUrl = selectedPlaylistType === 'custom' ? createScreen.inputCustomUrl.value.trim() : '';
 
+    window.audioManager.unlockAudio(false);
     createScreen.btnSubmit.disabled = true;
     createScreen.btnSubmit.innerHTML = '<span>Creating room...</span>';
 
@@ -511,6 +512,8 @@ document.addEventListener('DOMContentLoaded', () => {
       socket.connect();
       return;
     }
+
+    window.audioManager.unlockAudio(false);
 
     const submitBtn = joinScreen.form.querySelector('button[type="submit"]');
     if (submitBtn) {
@@ -610,12 +613,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Host Starts Game
   hostLobby.btnStartGame.addEventListener('click', () => {
+    window.audioManager.unlockAudio(false);
     socket.emit('start_game', (res) => {
       if (res && res.error) {
         showToast(res.error, 'error');
       }
     });
   });
+
+  // Mobile Player Sound Check Button in Lobby
+  const btnPlayerSoundTest = document.getElementById('btn-player-sound-test');
+  const textPlayerSoundTest = document.getElementById('text-player-sound-test');
+  const iconPlayerSoundTest = document.getElementById('icon-player-sound-test');
+
+  if (btnPlayerSoundTest) {
+    btnPlayerSoundTest.addEventListener('click', () => {
+      window.audioManager.unlockAudio(true);
+      if (textPlayerSoundTest) textPlayerSoundTest.textContent = 'Sound aktiviert!';
+      if (iconPlayerSoundTest) iconPlayerSoundTest.setAttribute('data-lucide', 'check-circle-2');
+      btnPlayerSoundTest.classList.add('sound-tested-success');
+      if (window.lucide) lucide.createIcons();
+      showToast('Sound aktiviert & getestet! 🔊', 'success');
+    });
+  }
+
+  // Mobile Unmute Fallback Button on Game Stage
+  const btnUnmuteMobile = document.getElementById('btn-unmute-mobile');
+  if (btnUnmuteMobile) {
+    btnUnmuteMobile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.audioManager.resumePendingAudio();
+    });
+  }
+
+  // Tapping/focusing the guess input also unblocks audio if held by mobile browser
+  if (gameScreen.inputGuess) {
+    gameScreen.inputGuess.addEventListener('focus', () => {
+      window.audioManager.resumePendingAudio();
+    });
+    gameScreen.inputGuess.addEventListener('touchstart', () => {
+      window.audioManager.resumePendingAudio();
+    }, { passive: true });
+  }
 
   // =========================================================
   // ACTIVE GAMEPLAY & ROUND LOOP

@@ -458,6 +458,14 @@
           </span>
         </div>
 
+        <!-- Sound Check Button for Mobile Players -->
+        <div class="lobby-sound-check-wrap">
+          <button type="button" class="btn btn-secondary btn-sm lobby-sound-btn" id="btn-player-sound-test">
+            <i data-lucide="volume-2" id="icon-player-sound-test"></i>
+            <span id="text-player-sound-test">Sound aktivieren & testen</span>
+          </button>
+        </div>
+
         <!-- Player list -->
         <div class="player-lobby-section">
           <div class="section-header-compact">
@@ -522,6 +530,12 @@
               </span>
               <span id="stage-status-text">Guess the song!</span>
             </div>
+
+            <!-- Mobile Tap-to-Unmute Fallback Button -->
+            <button type="button" id="btn-unmute-mobile" class="btn-unmute-mobile glow-effect" style="display: none;">
+              <i data-lucide="volume-2"></i>
+              <span>Sound aktivieren (Tippen)</span>
+            </button>
           </div>
 
           <!-- Guess Input & Autocomplete Area -->
