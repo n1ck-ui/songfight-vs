@@ -15,6 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   socket.on('connect', () => {
     console.log('[SongFight] Connected to server, socket ID:', socket.id);
+    // If mobile phone was in a room before disconnecting, auto-reconnect session
+    if (state.roomCode && state.playerName) {
+      socket.emit('reconnect_room', { roomCode: state.roomCode, playerName: state.playerName }, (res) => {
+        if (res && res.success) {
+          console.log('[SongFight] Successfully restored room session on reconnect:', state.roomCode);
+        }
+      });
+    }
   });
 
   socket.on('disconnect', (reason) => {
@@ -1154,12 +1162,11 @@ document.addEventListener('DOMContentLoaded', () => {
       podiumScreen.otherBox.style.display = 'none';
     }
 
-    // Host / Player Replay button state
-    if (!state.isHost) {
-      podiumScreen.btnReplay.style.display = 'none';
-    } else {
-      podiumScreen.btnReplay.style.display = 'inline-flex';
-    }
+    // Replay button is visible for ALL players (anyone can start a rematch)
+    podiumScreen.btnReplay.style.display = 'inline-flex';
+    podiumScreen.btnReplay.disabled = false;
+    podiumScreen.btnReplay.innerHTML = '<i data-lucide="rotate-ccw"></i><span>Play Again</span>';
+    if (window.lucide) lucide.createIcons();
 
     // Sequential Podium Reveal: 3rd -> 2nd -> 1st
     setTimeout(() => {
@@ -1187,19 +1194,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 600);
   });
 
-  // Podium Action: Replay Game
-  podiumScreen.btnReplay.addEventListener('click', () => {
-    socket.emit('replay_game');
+  // Podium Action: Replay Game (Works reliably for Host and Players on mobile)
+  podiumScreen.btnReplay.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!state.roomCode) {
+      showToast('Room not found. Returning to start...', 'info');
+      window.location.href = '/';
+      return;
+    }
+
+    podiumScreen.btnReplay.disabled = true;
+    podiumScreen.btnReplay.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Starting...</span>';
+    if (window.lucide) lucide.createIcons();
+
+    socket.emit('replay_game', { roomCode: state.roomCode, playerName: state.playerName }, (res) => {
+      podiumScreen.btnReplay.disabled = false;
+      podiumScreen.btnReplay.innerHTML = '<i data-lucide="rotate-ccw"></i><span>Play Again</span>';
+      if (window.lucide) lucide.createIcons();
+
+      if (res && res.error) {
+        showToast(res.error, 'error');
+        if (res.error.includes('expired') || res.error.includes('not found')) {
+          setTimeout(() => { window.location.href = '/'; }, 1500);
+        }
+      }
+    });
   });
 
   socket.on('game_reset_to_lobby', (room) => {
     updateLobbyPlayers(room);
+    const me = room.players?.find(p => p.id === socket.id || p.name === state.playerName);
+    if (me) {
+      state.isHost = !!me.isHost;
+    }
     if (state.isHost) {
       showScreen('screen-lobby-host');
     } else {
       showScreen('screen-lobby-player');
     }
-    showToast('Game has been reset! A new round can start.');
+    showToast('Game has been reset! A new round can start. 🎮', 'success');
   });
 
   // Podium Action: Quit

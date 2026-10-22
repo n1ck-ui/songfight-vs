@@ -2427,6 +2427,8 @@ h1, h2, h3, h4, .brand-text {
 }
 
 .podium-actions-footer {
+  position: relative;
+  z-index: 20;
   display: flex;
   gap: 16px;
   width: 100%;
@@ -2435,6 +2437,10 @@ h1, h2, h3, h4, .brand-text {
 
 .podium-actions-footer .btn {
   flex: 1;
+  min-height: 50px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
 }
 
 /* =========================================================

@@ -761,10 +761,45 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Replay game
-  socket.on('replay_game', () => {
-    const room = rooms.get(socket.roomCode);
-    if (!room || room.hostId !== socket.id) return;
+  // Reconnect Room Session (Survives mobile screen lock, network handoffs)
+  socket.on('reconnect_room', ({ roomCode, playerName }, callback) => {
+    const cb = typeof callback === 'function' ? callback : () => {};
+    if (!roomCode) return cb({ error: 'No room code provided' });
+
+    const code = roomCode.toUpperCase().trim();
+    const room = rooms.get(code);
+    if (!room) return cb({ error: 'Room no longer exists' });
+
+    socket.join(code);
+    socket.roomCode = code;
+
+    // Update player socket ID
+    const player = room.players.find(p => p.name === playerName);
+    if (player) {
+      player.id = socket.id;
+      if (player.isHost) {
+        room.hostId = socket.id;
+      }
+    }
+
+    console.log(`[${code}] Player ${playerName || socket.id} reconnected.`);
+    cb({ success: true, room: serializeRoom(room) });
+    io.to(code).emit('room_update', serializeRoom(room));
+  });
+
+  // Replay game (Accessible by any player in room, auto-resets room for all)
+  socket.on('replay_game', (data, callback) => {
+    const cb = typeof callback === 'function' ? callback : () => {};
+    const targetCode = (data && data.roomCode) ? data.roomCode.toUpperCase().trim() : socket.roomCode;
+    const room = targetCode ? rooms.get(targetCode) : null;
+
+    if (!room) {
+      console.warn(`Replay failed: room "${targetCode}" not found.`);
+      return cb({ error: 'Room expired or not found. Please create a new room.' });
+    }
+
+    socket.join(room.code);
+    socket.roomCode = room.code;
 
     room.state = 'LOBBY';
     room.currentRound = 0;
@@ -776,7 +811,9 @@ io.on('connection', (socket) => {
       p.pointsEarnedThisRound = 0;
     });
 
+    console.log(`[${room.code}] Game replayed/reset to lobby by player.`);
     io.to(room.code).emit('game_reset_to_lobby', serializeRoom(room));
+    cb({ success: true, room: serializeRoom(room) });
   });
 
   // Disconnect / Leave
@@ -787,6 +824,25 @@ io.on('connection', (socket) => {
 
     const room = rooms.get(roomCode);
     if (!room) return;
+
+    // On mobile devices, disconnects happen temporarily during screen lock or tab change.
+    // If room is in GAMEOVER, keep room alive for 60 seconds so players can tap replay!
+    if (room.state === 'GAMEOVER') {
+      setTimeout(() => {
+        const r = rooms.get(roomCode);
+        if (r && r.state === 'GAMEOVER') {
+          const idx = r.players.findIndex(p => p.id === socket.id);
+          if (idx !== -1) {
+            r.players.splice(idx, 1);
+            if (r.players.length === 0) {
+              rooms.delete(roomCode);
+              console.log(`Room ${roomCode} cleaned up after game over timeout.`);
+            }
+          }
+        }
+      }, 60000);
+      return;
+    }
 
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
     if (playerIndex !== -1) {
